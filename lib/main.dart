@@ -37,6 +37,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   String timeframe = '1D';
+  String tradeAction = 'Buy';
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -54,6 +55,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         _Header(wide: wide),
                         const SizedBox(height: 26),
                         _PortfolioCard(wide: wide),
+                        const SizedBox(height: 24),
+                        _TradeCard(
+                          action: tradeAction,
+                          onActionChanged: (value) => setState(() => tradeAction = value),
+                        ),
                         const SizedBox(height: 24),
                         if (wide)
                           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -88,6 +94,89 @@ class _DashboardPageState extends State<DashboardPage> {
           }),
         ),
       );
+}
+
+class _TradeCard extends StatefulWidget {
+  const _TradeCard({required this.action, required this.onActionChanged});
+  final String action;
+  final ValueChanged<String> onActionChanged;
+
+  @override
+  State<_TradeCard> createState() => _TradeCardState();
+}
+
+class _TradeCardState extends State<_TradeCard> {
+  String symbol = 'BTC/USD';
+  final quantityController = TextEditingController(text: '0.01');
+
+  double get price => double.parse(markets
+      .firstWhere((item) => item.symbol == symbol)
+      .price
+      .replaceAll(r'$', '')
+      .replaceAll(',', ''));
+
+  double get quantity => double.tryParse(quantityController.text) ?? 0;
+
+  @override
+  void dispose() {
+    quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final buying = widget.action == 'Buy';
+    final accent = buying ? green : red;
+    return _Card(
+      title: 'Trade',
+      trailing: const Text('Demo order', style: TextStyle(color: muted, fontSize: 11, fontWeight: FontWeight.w600)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(color: canvas, borderRadius: BorderRadius.circular(11)),
+          child: Row(children: ['Buy', 'Sell'].map((action) => Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => widget.onActionChanged(action),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(color: widget.action == action ? (action == 'Buy' ? green : red) : Colors.transparent, borderRadius: BorderRadius.circular(8)),
+                child: Text(action, textAlign: TextAlign.center, style: TextStyle(color: widget.action == action ? Colors.white : muted, fontWeight: FontWeight.w700, fontSize: 13)),
+              ),
+            ),
+          )).toList()),
+        ),
+        const SizedBox(height: 16),
+        const Text('ASSET', style: TextStyle(fontSize: 10, color: muted, fontWeight: FontWeight.w700, letterSpacing: .8)),
+        const SizedBox(height: 7),
+        DropdownButtonFormField<String>(
+          value: symbol,
+          decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE5EAF0))), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
+          items: markets.map((item) => DropdownMenuItem(value: item.symbol, child: Text('${item.symbol} · ${item.price}', style: const TextStyle(fontSize: 12)))).toList(),
+          onChanged: (value) => setState(() { if (value != null) symbol = value; }),
+        ),
+        const SizedBox(height: 14),
+        const Text('QUANTITY', style: TextStyle(fontSize: 10, color: muted, fontWeight: FontWeight.w700, letterSpacing: .8)),
+        const SizedBox(height: 7),
+        TextField(
+          controller: quantityController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(suffixText: symbol.contains('/') ? symbol.split('/').first : 'shares', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE5EAF0))), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
+        ),
+        const SizedBox(height: 12),
+        Row(children: [const Expanded(child: Text('Estimated total', style: TextStyle(color: muted, fontSize: 12))), Text('\$${(price * quantity).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))]),
+        const SizedBox(height: 14),
+        SizedBox(width: double.infinity, child: FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+          onPressed: quantity > 0 ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${widget.action} order for $quantity $symbol placed in demo mode.'))) : null,
+          child: Text('${widget.action} $symbol', style: const TextStyle(fontWeight: FontWeight.w700)),
+        )),
+        const SizedBox(height: 8),
+        const Text('Orders are simulated and won’t be sent to a broker.', style: TextStyle(color: muted, fontSize: 10)),
+      ]),
+    );
+  }
 }
 
 class _Header extends StatelessWidget {
