@@ -96,6 +96,7 @@ class _DashboardPageState extends State<DashboardPage> {
       );
 }
 
+// Adds a simulated Buy/Sell order form with asset selection, quantity, and estimated total.
 class _TradeCard extends StatefulWidget {
   const _TradeCard({required this.action, required this.onActionChanged});
   final String action;
@@ -150,7 +151,7 @@ class _TradeCardState extends State<_TradeCard> {
         const Text('ASSET', style: TextStyle(fontSize: 10, color: muted, fontWeight: FontWeight.w700, letterSpacing: .8)),
         const SizedBox(height: 7),
         DropdownButtonFormField<String>(
-          value: symbol,
+          initialValue: symbol,
           decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE5EAF0))), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
           items: markets.map((item) => DropdownMenuItem(value: item.symbol, child: Text('${item.symbol} · ${item.price}', style: const TextStyle(fontSize: 12)))).toList(),
           onChanged: (value) => setState(() { if (value != null) symbol = value; }),
